@@ -512,20 +512,12 @@ bool initializeShaders(GLuint& shaderProgram, HWND nativeWindow)
 /// <param name="display">The EGLDisplay used by the application.</param>
 /// <param name="surface">The EGLSurface created from the native window.</param>
 /// <param name="nativeWindow">A native window, used to display error messages.</param>
-bool renderScene(GLuint shaderProgram, EGLDisplay display, EGLSurface surface, HWND nativeWindow, GLManager &man)
+bool renderScene(EGLDisplay display, EGLSurface surface, HWND nativeWindow, GLManager& man, GLManager& man2)
 {
 	// The message handler setup for the window system will signal this variable when the window is closed, so close the application.
 	if (HasUserQuit) { return false; }
 
-	man.UseProgram();
-
-	//	Set the clear colour
-	//	At the start of a frame, generally you clear the image to tell OpenGL ES that you're done with whatever was there before and want to
-	//	draw a new frame. In order to do that however, OpenGL ES needs to know what colour to set in the image's place. glClearColor
-	//	sets this value as 4 floating point values between 0.0 and 1.0, as the Red, Green, Blue and Alpha channels. Each value represents
-	//	the intensity of the particular channel, with all 0.0 being transparent black, and all 1.0 being opaque white. Subsequent calls to
-	//	glClear with the colour bit will clear the frame buffer to this value.
-	//	The functions glClearDepth and glClearStencil allow an application to do the same with depth and stencil values respectively.
+	
 	glClearColor(0.00f, 0.70f, 0.67f, 1.0f);
 
 	//	Clears the colour buffer.
@@ -533,65 +525,36 @@ bool renderScene(GLuint shaderProgram, EGLDisplay display, EGLSurface surface, H
 	//	GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT, respectively.
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	// Get the location of the transformation matrix in the shader using its name
-	int matrixLocation = glGetUniformLocation(man.program, "transformationMatrix");
 
 	// Matrix used to specify the orientation of the triangle on screen.
 	const float transformationMatrix[] = { 
 		1.0f, 0.0f, 0.0f, 0.0f, 
 		0.0f, 1.0f, 0.0f, 0.0f, 
 		0.0f, 0.0f, 1.0f, 0.0f, 
-		0.0f, 0.0f, 0.0f, 1.0f 
+		0.5f, 0.5f, 0.0f, 1.0f 
 	};
 
-	// Pass the transformationMatrix to the shader using its location
-	glUniformMatrix4fv(matrixLocation, 1, GL_FALSE, transformationMatrix);
-	if (!testGLError(nativeWindow, "glUniformMatrix4fv")) { return false; }
 
-	// Enable the user-defined vertex array
-	glEnableVertexAttribArray(man.vary);
+	man.UseProgram();
+	man.Uniform("transformationMatrix", transformationMatrix);
+	man.Attribute(NULL);
+	man.Draw();
 
-	// Sets the vertex data to this attribute index, with the number of floats in each position
-	glVertexAttribPointer(man.vary, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	if (!testGLError(nativeWindow, "glVertexAttribPointer")) { return false; }
+	const float transformationMatrix2[] = {
+	1.0f, 0.0f, 0.0f, 0.0f,
+	0.0f, 1.0f, 0.0f, 0.0f,
+	0.0f, 0.0f, 1.0f, 0.0f,
+	0.0f, 0.0f, 0.0f, 1.0f
+	};
 
-	//	Draw the triangle
-	//	glDrawArrays is a draw call, and executes the shader program using the vertices and other state set by the user. Draw calls are the
-	//	functions which tell OpenGL ES when to actually draw something to the framebuffer given the current state.
-	//	glDrawArrays causes the vertices to be submitted sequentially from the position given by the "first" argument until it has processed
-	//	"count" vertices. Other draw calls exist, notably glDrawElements which also accepts index data to allow the user to specify that
-	//	some vertices are accessed multiple times, without copying the vertex multiple times.
-	//	Others include versions of the above that allow the user to draw the same object multiple times with slightly different data, and
-	//	a version of glDrawElements which allows a user to restrict the actual indices accessed.
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	if (!testGLError(nativeWindow, "glDrawArrays")) { return false; }
 
-	// Invalidate the contents of the specified buffers for the framebuffer to allow the implementation further optimization opportunities.
-	// The following is taken from https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_discard_framebuffer.txt
-	// Some OpenGL ES implementations cache framebuffer images in a small pool of fast memory.  Before rendering, these implementations must load the
-	// existing contents of one or more of the logical buffers (colour, depth, stencil, etc.) into this memory.  After rendering, some or all of these
-	// buffers are likewise stored back to external memory so their contents can be used again in the future.  In many applications, some or all of the
-	// logical buffers  are cleared at the start of rendering.  If so, the effort to load or store those buffers is wasted.
+	
+	man2.UseProgram();
+	man2.Uniform("transformationMatrix", transformationMatrix2);
+	man2.Attribute(NULL);
+	man2.Draw();
+	
 
-	// Even without this extension, if a frame of rendering begins with a full-screen Clear, an OpenGL ES implementation may optimize away the loading
-	// of framebuffer contents prior to rendering the frame.  With this extension, an application can use DiscardFramebufferEXT to signal that framebuffer
-	// contents will no longer be needed.  In this case an OpenGL ES implementation may also optimize away the storing back of framebuffer contents after rendering the frame.
-	if (isGlExtensionSupported("GL_EXT_discard_framebuffer"))
-	{
-		GLenum invalidateAttachments[2];
-		invalidateAttachments[0] = GL_DEPTH_EXT;
-		invalidateAttachments[1] = GL_STENCIL_EXT;
-
-		glDiscardFramebufferEXT(GL_FRAMEBUFFER, 2, &invalidateAttachments[0]);
-		if (!testGLError(nativeWindow, "glDiscardFramebufferEXT")) { return false; }
-	}
-
-	//	Present the display data to the screen.
-	//	When rendering to a Window surface, OpenGL ES is double buffered. This means that OpenGL ES renders directly to one frame buffer,
-	//	known as the back buffer, whilst the display reads from another - the front buffer. eglSwapBuffers signals to the windowing system
-	//	that OpenGL ES 2.0 has finished rendering a scene, and that the display should now draw to the screen from the new data. At the same
-	//	time, the front buffer is made available for OpenGL ES 2.0 to start rendering to. In effect, this call swaps the front and back
-	//	buffers.
 	if (!eglSwapBuffers(display, surface))
 	{
 		testEGLError(nativeWindow, "eglSwapBuffers");
@@ -641,12 +604,12 @@ void releaseWindowAndDisplay(HWND nativeWindow, HDC deviceContext)
 
 bool render(HWND nativeWindow, EGLDisplay display, EGLSurface surface, GLuint shaderProgram, GLManager& man)
 {
-	eglSwapInterval(display, 1);
+	
 	// Renders a triangle for 800 frames using the state setup in the previous function
 	//for (uint32_t i = 0; i < 800; ++i)
 	for(;;)
 	{
-		if (!renderScene(shaderProgram, display, surface, nativeWindow, man)) { return false; }
+		
 	}
 	return true;
 }
@@ -669,20 +632,6 @@ int WINAPI WinMain(HINSTANCE applicationInstance, HINSTANCE previousInstance, TC
 	EGLSurface surface = NULL;
 	EGLContext context = NULL;
 
-	// Handle for the program handle which combines them.
-	GLuint shaderProgram = 0;
-
-	// A vertex buffer object to store our model data.
-	GLuint vertexBuffer = 0;
-
-	//GLManager m_manager(NULL, NULL);
-		// Initialize the vertex data in the application
-	//initializeBuffer(vertexBuffer, nativeWindow);
-
-	// Initialize the fragment and vertex shaders used in the application
-	//initializeShaders(shaderProgram, nativeWindow);
-
-
 	// Perform the chain of initialisation step (stop if anything fails)
 	createWindowAndDisplay(applicationInstance, nativeWindow, deviceContext);
 
@@ -699,14 +648,19 @@ int WINAPI WinMain(HINSTANCE applicationInstance, HINSTANCE previousInstance, TC
 	setupEGLContext(display, config, surface, context, nativeWindow);
 
 
-	GLManager m_manager(NULL, NULL);
+	GLManager m_manager((const char*)svtx_shader_src, (const char*)sfrag_shader_src);
 	m_manager.GenBuffer();
 
+
+	GLManager m_manager2((const char*)svtx_shader_src, (const char*)sfrag_shader_src);
+	m_manager2.GenBuffer();
+
 	// If everything else succeeded, run the rendering loop.
-	render(nativeWindow, display, surface, shaderProgram, m_manager);
+	eglSwapInterval(display, 1);
+	for (;;) renderScene(display, surface, nativeWindow, m_manager, m_manager2);
 
 	// Cleanup
-	deInitializeGLState(shaderProgram, vertexBuffer);
+	//deInitializeGLState(shaderProgram, vertexBuffer);
 	releaseEGLState(display);
 	releaseWindowAndDisplay(nativeWindow, deviceContext);
 

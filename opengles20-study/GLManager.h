@@ -4,6 +4,21 @@
 #include <DynamicGles.h>
 
 
+const char * const sfrag_shader_src = "\
+											 void main (void)\
+											 {\
+												gl_FragColor = vec4(1.0, 1.0, 0.66 ,1.0);\
+											 }";
+
+const char * const svtx_shader_src = "\
+										   attribute highp vec4	myVertex;\
+										   uniform highp mat4 transformationMatrix;\
+										   void main(void)\
+										   {\
+										   gl_Position = transformationMatrix * myVertex;\
+										   }";
+
+
 
 class GLManager
 {
@@ -12,8 +27,9 @@ public:
 	~GLManager();
 	void GenBuffer();
 	void UseProgram();
-	//void Attribute(GLfloat vertexData[]);
-	//void Draw();
+	void Attribute(GLfloat vertexData[]);
+	GLint Uniform(const char* name, const GLfloat* transformationMatrix);
+	void Draw();
 
 
 	const GLfloat vertexData[9] = { 
