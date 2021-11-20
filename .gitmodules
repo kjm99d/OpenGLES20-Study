@@ -1,0 +1,3 @@
+[submodule "lib/Native_SDK"]
+	path = lib/Native_SDK
+	url = https://github.com/powervr-graphics/Native_SDK
