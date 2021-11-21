@@ -15,7 +15,6 @@ GLManager::GLManager(const char * vtx_shader_src, const char * frag_shader_src)
 
 	glShaderSource(fragmentShader, 1, (const char**)&this->frag_shader_src, NULL);
 	glCompileShader(fragmentShader);
-	// 쉐이더 컴파일 오류 체크 해야하는데 일단 패스
 
 	glShaderSource(vertexShader, 1, (const char**)&this->vtx_shader_src, NULL);
 	glCompileShader(vertexShader);
@@ -41,7 +40,28 @@ void GLManager::GenBuffer()
 {
 	glGenBuffers(1, &this->vtx_buf);
 	glBindBuffer(GL_ARRAY_BUFFER, this->vtx_buf);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(this->vertexData2), this->vertexData2, GL_STATIC_DRAW);
+
+	/*
+		glBufferData 사용 시 두번째 파라미터는 sizeof(vertexData)
+		vertexData 는 GLfloat Type으로 9개의 데이터가 들어있다.
+		4바이트 * 9 = 36 바이트를 처리한다.
+		*/
+}
+
+
+void GLManager::GenBuffer(std::vector<GLfloat>& vtx)
+{
+	glGenBuffers(1, &this->vtx_buf);
+	glBindBuffer(GL_ARRAY_BUFFER, this->vtx_buf);
+	//glBufferData(GL_ARRAY_BUFFER, vtx.size() * sizeof(GLfloat), vtx.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vtx.size(), vtx.data(), GL_STATIC_DRAW);
+
+	/*
+		glBufferData 사용 시 두번째 파라미터는 sizeof(vertexData)
+		vertexData 는 GLfloat Type으로 9개의 데이터가 들어있다.
+		4바이트 * 9 = 36 바이트를 처리한다.
+		*/
 }
 
 void GLManager::UseProgram()
@@ -51,9 +71,22 @@ void GLManager::UseProgram()
 
 void GLManager::Attribute(GLfloat vertexData[])
 {
+	glBindBuffer(GL_ARRAY_BUFFER, this->vtx_buf);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(this->vertexData2), this->vertexData2, GL_STATIC_DRAW);
+	//glBindBuffer(GL_ARRAY_BUFFER, this->vtx_buf);
 	this->vtx_ary = glGetAttribLocation(program, "myVertex");
-	glEnableVertexAttribArray(vtx_ary);
-	glVertexAttribPointer(vtx_ary, 3, GL_FLOAT, GL_FALSE, 0, vertexData);
+	glEnableVertexAttribArray(this->vtx_ary);
+	glVertexAttribPointer(this->vtx_ary, 3, GL_FLOAT, GL_FALSE, 0, 0);
+}
+
+void GLManager::Attribute(std::vector<GLfloat>& vtx, bool t)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, this->vtx_buf);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vtx.size(), vtx.data(), GL_STATIC_DRAW);
+	//glBindBuffer(GL_ARRAY_BUFFER, this->vtx_buf);
+	this->vtx_ary = glGetAttribLocation(program, "myVertex");
+	glEnableVertexAttribArray(this->vtx_ary);
+	glVertexAttribPointer(this->vtx_ary, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
 }
 
 GLint GLManager::Uniform(const char* name, const GLfloat * transformationMatrix)
@@ -64,8 +97,9 @@ GLint GLManager::Uniform(const char* name, const GLfloat * transformationMatrix)
 	return uniformLoc;
 }
 
-void GLManager::Draw()
+void GLManager::Draw(int size)
 {
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glDisableVertexAttribArray(vtx_ary);
+	glDrawArrays(GL_TRIANGLES, 0, size);
+	glDisableVertexAttribArray(this->vtx_ary);
+	
 }

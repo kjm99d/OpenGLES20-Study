@@ -35,6 +35,8 @@ const uint32_t VertexArray = 0;
 // Variable set by the message handler to finish the demo
 bool HasUserQuit = false;
 
+std::vector<GLfloat> vtx;
+
 /// <summary>Processes event messages for the main window.</summary>
 /// <returns>Result code to send to the OS.</returns>
 /// <param name="nativeWindow">Handle to the window.</param>
@@ -542,23 +544,27 @@ bool renderScene(EGLDisplay display, EGLSurface surface, HWND nativeWindow, GLMa
 
 
 	man.UseProgram();
+	man.Attribute(vtx, 1);
 	man.Uniform("transformationMatrix", transformationMatrix);
-	man.Attribute(NULL);
-	man.Draw();
+	man.Draw(3);
+
+	vtx[0] = (GetTickCount() % 10) / 10.0F;
 
 	const float transformationMatrix2[] = {
-	1.0f, 0.0f, 0.0f, 0.0f,
-	0.0f, 1.0f, 0.0f, 0.0f,
-	0.0f, 0.0f, 1.0f, 0.0f,
+	0.3f, 0.0f, 0.0f, 0.0f,
+	0.0f, 0.3f, 0.0f, 0.0f,
+	0.0f, 0.0f, 0.3f, 0.0f,
 	0.0f, 0.0f, 0.0f, 1.0f
 	};
 
 
 	
 	man2.UseProgram();
+	man2.Attribute(vertexData);
 	man2.Uniform("transformationMatrix", transformationMatrix2);
-	man2.Attribute(NULL);
-	man2.Draw();
+	man2.Draw(6);
+
+	
 	
 
 	if (!eglSwapBuffers(display, surface))
@@ -655,7 +661,17 @@ int WINAPI WinMain(HINSTANCE applicationInstance, HINSTANCE previousInstance, TC
 
 
 	GLManager m_manager((const char*)svtx_shader_src, (const char*)sfrag_shader_src);
-	m_manager.GenBuffer();
+	//m_manager.GenBuffer();
+	GLfloat vertexData[] = {
+		-0.2f, -0.2f, 0.0f, // Bottom Left
+		0.2f, -0.2f, 0.0f,	// Bottom Right
+		0.0f, 0.2f, 0.0f	// Top Middle
+	};
+
+
+	
+	for (int i = 0; i < sizeof(vertexData) / sizeof(GLfloat); i++)	vtx.push_back(vertexData[i]);
+	m_manager.GenBuffer(vtx);
 
 
 	GLManager m_manager2((const char*)svtx_shader_src, (const char*)sfrag_shader_src);
