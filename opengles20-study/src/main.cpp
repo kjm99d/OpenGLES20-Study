@@ -534,6 +534,12 @@ bool renderScene(EGLDisplay display, EGLSurface surface, HWND nativeWindow, GLMa
 		0.5f, 0.5f, 0.0f, 1.0f 
 	};
 
+	GLfloat vertexData[9] = {
+	-0.4f, -0.4f, 0.0f,
+	0.4f, -0.4f, 0.0f,
+	0.0f, 0.4f, 0.0f
+	};
+
 
 	man.UseProgram();
 	man.Uniform("transformationMatrix", transformationMatrix);

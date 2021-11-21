@@ -43,6 +43,7 @@ public:
 	GLuint vtx_buf;
 	GLuint frag_buf;
 	GLuint vary;
+	GLuint vtx_ary;
 
 private:
 

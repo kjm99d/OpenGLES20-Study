@@ -24,7 +24,7 @@ GLManager::GLManager(const char * vtx_shader_src, const char * frag_shader_src)
 	glAttachShader(this->program, vertexShader);
 	
 	// Bind the vertex attribute "myVertex" to location VERTEX_ARRAY (0)
-	glBindAttribLocation(this->program, vary, "myVertex");
+	// glBindAttribLocation(this->program, vary, "myVertex");
 	glLinkProgram(this->program);
 
 	glDeleteShader(vertexShader);
@@ -51,9 +51,9 @@ void GLManager::UseProgram()
 
 void GLManager::Attribute(GLfloat vertexData[])
 {
-
-	glEnableVertexAttribArray(vary);
-	glVertexAttribPointer(vary, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	this->vtx_ary = glGetAttribLocation(program, "myVertex");
+	glEnableVertexAttribArray(vtx_ary);
+	glVertexAttribPointer(vtx_ary, 3, GL_FLOAT, GL_FALSE, 0, vertexData);
 }
 
 GLint GLManager::Uniform(const char* name, const GLfloat * transformationMatrix)
@@ -67,5 +67,5 @@ GLint GLManager::Uniform(const char* name, const GLfloat * transformationMatrix)
 void GLManager::Draw()
 {
 	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glDisableVertexAttribArray(vary);
+	glDisableVertexAttribArray(vtx_ary);
 }
