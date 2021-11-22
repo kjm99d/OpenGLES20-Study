@@ -52,9 +52,6 @@ void GLManager::GenBuffer()
 
 void GLManager::GenBuffer(std::vector<GLfloat>& vtx)
 {
-	glGenBuffers(1, &this->vtx_buf);
-	glBindBuffer(GL_ARRAY_BUFFER, this->vtx_buf);
-	//glBufferData(GL_ARRAY_BUFFER, vtx.size() * sizeof(GLfloat), vtx.data(), GL_STATIC_DRAW);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vtx.size(), vtx.data(), GL_STATIC_DRAW);
 
 	/*
@@ -81,9 +78,6 @@ void GLManager::Attribute(GLfloat vertexData[])
 
 void GLManager::Attribute(std::vector<GLfloat>& vtx, bool t)
 {
-	glBindBuffer(GL_ARRAY_BUFFER, this->vtx_buf);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vtx.size(), vtx.data(), GL_STATIC_DRAW);
-	//glBindBuffer(GL_ARRAY_BUFFER, this->vtx_buf);
 	this->vtx_ary = glGetAttribLocation(program, "myVertex");
 	glEnableVertexAttribArray(this->vtx_ary);
 	glVertexAttribPointer(this->vtx_ary, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
